@@ -1,35 +1,83 @@
 package main
 
 import (
+	"fmt"
 	"math/big"
 	"os"
-	"fmt"
+
+	"github.com/urfave/cli"
 )
 
+var Version = "v0.0.0"
+
 func main() {
+	app := cli.NewApp()
+
+	app.Name = "base"
+	app.Version = Version
+	app.Usage = "utility for converting numbers between different bases"
+
+	app.Writer = os.Stdout
+	app.ErrWriter = os.Stderr
+
+	app.Flags = []cli.Flag{
+		cli.IntFlag{
+			Name:  "from",
+			Usage: "base of input",
+			Value: 10,
+		},
+
+		cli.IntFlag{
+			Name:  "to",
+			Usage: "base of output",
+			Value: 2,
+		},
+
+		cli.StringFlag{
+			Name:  "pad",
+			Usage: "what to pad output with",
+			Value: "0",
+		},
+	}
+
+	app.Action = convertBases
+
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func convertBases(ctx *cli.Context) error {
 	var nums []*big.Int
-	for i := 1; i < len(os.Args); i++ {
-		argNum, ok := big.NewInt(0).SetString(os.Args[i], 10)
+	for _, arg := range ctx.Args() {
+		argNum, ok := big.NewInt(0).SetString(arg, ctx.Int("from"))
 		if !ok {
-			panic(fmt.Errorf("could not parse arg %q", os.Args[i]))
+			return cli.NewExitError(fmt.Errorf("unable to parse %q", arg), 1)
 		}
+
 		nums = append(nums, argNum)
 	}
 
-	var longest int
+	var out []string
 	for _, num := range nums {
-		if num.BitLen() > longest {
-			longest = num.BitLen()
+		out = append(out, num.Text(ctx.Int("to")))
+	}
+
+	var longest int
+	for _, str := range out {
+		if len(str) > longest {
+			longest = len(str)
 		}
 	}
 
-	for _, num := range nums {
-		for i := 0; i < longest - num.BitLen(); i++ {
-			fmt.Print("0")
+	for _, str := range out {
+		for i := 0; i < longest-len(str); i++ {
+			fmt.Print(ctx.String("pad"))
 		}
-		for i := num.BitLen() - 1; i >= 0; i-- {
-			fmt.Printf("%d", num.Bit(i))
-		}
-		fmt.Println()
+
+		fmt.Fprintln(ctx.App.Writer, str)
 	}
+
+	return nil
 }
