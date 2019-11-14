@@ -8,14 +8,14 @@ import (
 	"github.com/urfave/cli"
 )
 
-var Version = "v0.0.0"
+var Version = "0.0.0"
 
 func main() {
 	app := cli.NewApp()
 
 	app.Name = "base"
 	app.Version = Version
-	app.Usage = "utility for converting numbers between different bases"
+	app.Usage = "convert numbers between different bases"
 
 	app.Writer = os.Stdout
 	app.ErrWriter = os.Stderr
