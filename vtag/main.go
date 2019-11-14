@@ -102,17 +102,17 @@ func addChange(builder *strings.Builder, tag rune, count int, build, changes boo
 
 func cliAction(ctx *cli.Context) error {
 	versionTagCmd := exec.Command("git", "describe", "--abbrev=0")
-	tag, err := versionTagCmd.Output()
+	tag, err := versionTagCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("get version: %w", err)
+		return fmt.Errorf("get version: %w: %s", err, bytes.Trim(tag, "\n"))
 	}
 	version := tag
 
 	if !ctx.Bool("ignore-rc") {
 		branchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-		branch, err := branchCmd.Output()
+		branch, err := branchCmd.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("get branch: %w", err)
+			return fmt.Errorf("get branch: %w: %s", err, bytes.Trim(branch, "\n"))
 		}
 
 		if regexp.MustCompile(branchRegex).Match(branch) {
@@ -122,26 +122,26 @@ func cliAction(ctx *cli.Context) error {
 	version = bytes.Trim(version, "\n")
 
 	revNameCmd := exec.Command("git", "name-rev", "--name-only", "HEAD")
-	revName, err := revNameCmd.Output()
+	revName, err := revNameCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("get rev name: %w", err)
+		return fmt.Errorf("get rev name: %w: %s", err, bytes.Trim(revName, "\n"))
 	}
 
 	var revision []byte
 	if !regexp.MustCompile(tagNameRegex).Match(revName) {
 		shortRevCmd := exec.Command("git", "rev-list", "-n1", "--abbrev-commit", "HEAD")
-		shortRev, err := shortRevCmd.Output()
+		shortRev, err := shortRevCmd.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("get short rev: %w", err)
+			return fmt.Errorf("get short rev: %w: %s", err, bytes.Trim(shortRev, "\n"))
 		}
 		revision = bytes.Trim(shortRev, "\n")
 	}
 
 	var added, deleted int
 	diffStatCmd := exec.Command("git", "diff-files", "--numstat")
-	diffStatOutput, err := diffStatCmd.Output()
+	diffStatOutput, err := diffStatCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("get diff stat: %w", err)
+		return fmt.Errorf("get diff stat: %w: %s", err, bytes.Trim(diffStatOutput, "\n"))
 	}
 
 	for _, line := range strings.Split(string(diffStatOutput), "\n") {
@@ -164,9 +164,9 @@ func cliAction(ctx *cli.Context) error {
 	}
 
 	lsFilesCmd := exec.Command("git", "ls-files", "--others", "--exclude-standard")
-	lsFilesOutput, err := lsFilesCmd.Output()
+	lsFilesOutput, err := lsFilesCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("get untracked: %w", err)
+		return fmt.Errorf("get untracked: %w: %s", err, bytes.Trim(lsFilesOutput, "\n"))
 	}
 	updated := len(strings.Split(string(lsFilesOutput), "\n")) - 1
 
