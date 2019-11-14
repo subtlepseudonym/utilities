@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -100,6 +101,25 @@ func addChange(builder *strings.Builder, tag rune, count int, build, changes boo
 	return builder, true, true
 }
 
+func countLines(r io.Reader) (int, error) {
+    buf := make([]byte, 32*1024)
+    count := 0
+    lineSep := []byte{'\n'}
+
+    for {
+        c, err := r.Read(buf)
+        count += bytes.Count(buf[:c], lineSep)
+
+        switch {
+        case err == io.EOF:
+            return count, nil
+
+        case err != nil:
+            return count, err
+        }
+    }
+}
+
 func cliAction(ctx *cli.Context) error {
 	versionTagCmd := exec.Command("git", "describe", "--abbrev=0")
 	tag, err := versionTagCmd.CombinedOutput()
@@ -163,12 +183,28 @@ func cliAction(ctx *cli.Context) error {
 		deleted += delCount
 	}
 
+	var updated int
 	lsFilesCmd := exec.Command("git", "ls-files", "--others", "--exclude-standard")
 	lsFilesOutput, err := lsFilesCmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("get untracked: %w: %s", err, bytes.Trim(lsFilesOutput, "\n"))
 	}
-	updated := len(strings.Split(string(lsFilesOutput), "\n")) - 1
+	for _, filename := range strings.Split(string(lsFilesOutput), "\n") {
+		if filename == "" {
+			continue
+		}
+
+		f, err := os.Open(filename)
+		if err != nil {
+			return fmt.Errorf("open file: %w", err)
+		}
+
+		lineCount, err := countLines(f)
+		if err != nil {
+			return fmt.Errorf("count lines: %w", err)
+		}
+		updated += lineCount
+	}
 
 	_, err = fmt.Fprintf(ctx.App.Writer, "%s%s", version, buildTag(revision, added, deleted, updated))
 	return err
