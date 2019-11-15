@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	cliGit = "cli"
-	goGit = "go-git"
+	cliGit  = "cli"
+	goGit   = "go-git"
 	libGit2 = "libgit2"
 
-	branchRegex = `.*-rc`
+	branchRegex  = `.*-rc`
 	tagNameRegex = `tags.*\^0`
 )
 
@@ -36,11 +36,11 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name: "ignore-rc",
+			Name:  "ignore-rc",
 			Usage: "don't use \"*-rc\" branch names as version",
 		},
 		cli.StringFlag{
-			Name: "git-lib",
+			Name:  "git-lib",
 			Usage: "method for retrieving git repo info",
 			Value: "cli",
 		},
@@ -102,22 +102,22 @@ func addChange(builder *strings.Builder, tag rune, count int, build, changes boo
 }
 
 func countLines(r io.Reader) (int, error) {
-    buf := make([]byte, 32*1024)
-    count := 0
-    lineSep := []byte{'\n'}
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
 
-    for {
-        c, err := r.Read(buf)
-        count += bytes.Count(buf[:c], lineSep)
+	for {
+		c, err := r.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
 
-        switch {
-        case err == io.EOF:
-            return count, nil
+		switch {
+		case err == io.EOF:
+			return count, nil
 
-        case err != nil:
-            return count, err
-        }
-    }
+		case err != nil:
+			return count, err
+		}
+	}
 }
 
 func cliAction(ctx *cli.Context) error {
