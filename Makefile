@@ -2,7 +2,7 @@ default: build
 
 build:
 	mkdir -p bin
-	cd utilities && \
+	cd cmd && \
 	for dir in *; do \
 		go build -o "../bin/$$dir" "./$$dir"; \
 	done
