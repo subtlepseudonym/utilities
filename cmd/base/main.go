@@ -44,9 +44,16 @@ func main() {
 	app.Before = validateFlags
 	app.Action = action
 
+	app.Authors = []cli.Author{
+		{
+			Name:  "Connor Demille",
+			Email: "subtlepseudonym@gmail.com",
+		},
+	}
+
 	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(app.ErrWriter, err)
 	}
 }
 
