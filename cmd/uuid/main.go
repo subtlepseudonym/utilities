@@ -6,33 +6,72 @@ import (
 	"strconv"
 
 	"github.com/satori/go.uuid"
+	"github.com/urfave/cli"
 )
 
-func main() {
-	n := 1
-	if len(os.Args) > 0 {
-		n64, err := strconv.Atoi(os.Args[1])
-		if err != nil {
-			_, e := os.Stderr.WriteString(fmt.Sprintf("unable to parse %q", os.Args[1]))
-			if e != nil {
-				panic(e)
-			}
-			os.Exit(1)
-		}
+var Version = "1.0.0"
 
-		n = int(n64)
+func main() {
+	app := cli.NewApp()
+
+	app.Name = "uuid"
+	app.Version = Version
+	app.Usage = "generates v4 UUIDs"
+	app.UsageText = fmt.Sprintf("%s [flags] [count]", app.Name)
+	app.Description = `Generates UUIDs. If you provide an integer argument, it will treat it like usage of the --count flag. Explicit usage of the --count flag will override this behavior.`
+
+	app.Writer = os.Stdout
+	app.ErrWriter = os.Stderr
+
+	app.Flags = []cli.Flag{
+		cli.IntFlag{
+			Name:  "count, n",
+			Usage: "number of UUIDs to generate",
+			Value: 1,
+		},
 	}
 
-	for i := 0; i < n; i++ {
+	app.Before = processArgs
+	app.Action = action
+
+	app.Authors = []cli.Author{
+		{
+			Name:  "Connor Demille",
+			Email: "subtlepseudonym@gmail.com",
+		},
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Fprintln(app.ErrWriter, err)
+	}
+}
+
+func processArgs(ctx *cli.Context) error {
+	if ctx.NArg() == 0 || ctx.IsSet("count") {
+		return nil
+	}
+
+	countArg := ctx.Args()[0]
+	_, err := strconv.Atoi(countArg)
+	if err != nil {
+		return nil
+	}
+
+	ctx.Set("count", countArg)
+
+	return nil
+}
+
+func action(ctx *cli.Context) error {
+	for i := 0; i < ctx.Int("count"); i++ {
 		id, err := uuid.NewV4()
 		if err != nil {
-			_, e := os.Stderr.WriteString("generate uuid failed: " + err.Error())
-			if e != nil {
-				panic(e)
-			}
-			os.Exit(1)
+			return fmt.Errorf("new uuid: %v", err)
 		}
 
-		os.Stdout.WriteString(id.String() + "\n")
+		fmt.Fprintln(ctx.App.Writer, id.String())
 	}
+
+	return nil
 }
