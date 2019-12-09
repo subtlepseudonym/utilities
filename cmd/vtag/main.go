@@ -66,12 +66,12 @@ func versionTag(ctx *cli.Context) error {
 }
 
 func cliAction(ctx *cli.Context) error {
-	version, err := vtag.CLIVersion(!ctx.Bool("ignore-rc"))
+	version, err := vtag.GitBinaryVersion(!ctx.Bool("ignore-rc"))
 	if err != nil {
 		return fmt.Errorf("version: %v", err)
 	}
 
-	buildTag, err := vtag.CLIBuildTag()
+	buildTag, err := vtag.GitBinaryBuildTag()
 	if err != nil {
 		return fmt.Errorf("build tag: %v", err)
 	}

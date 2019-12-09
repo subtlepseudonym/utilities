@@ -10,15 +10,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/subtlepseudonym/version"
 	"github.com/Masterminds/semver"
 )
 
 const tagRevision = `tags.*\^0`
 
-// CLIVersion retrieves a semantic version from the local git repo's tags,
+// GitBinaryVersion retrieves a semantic version from the local git repo's tags,
 // preferring to use the branch name if useBranch is true and the branch is
 // a parseable semantic version with prerelease tags
-func CLIVersion(useBranch bool) (string, error) {
+func GitBinaryVersion(useBranch bool) (string, error) {
 	if useBranch {
 		prerelease := checkPreReleaseBranch()
 		if prerelease != "" {
@@ -26,72 +27,17 @@ func CLIVersion(useBranch bool) (string, error) {
 		}
 	}
 
-	revParse := exec.Command("git", "rev-parse", "HEAD")
-	revParseOut, err := revParse.CombinedOutput()
+	ver, err := version.Latest(version.GitBinary, ".")
 	if err != nil {
-		return "", fmt.Errorf("cmd git rev-parse: %v", err)
-	}
-	headRev := strings.TrimSpace(string(revParseOut))
-
-	showRef := exec.Command("git", "show-ref", "--tags", "--dereference")
-	showRefOut, err := showRef.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("cmd git show-ref: %v", err)
-	}
-	refs := strings.Split(string(showRefOut), "\n")
-
-	var tags []struct{ Name, Revision string }
-	for _, ref := range refs {
-		if !strings.HasSuffix(ref, "^{}") { // not dereferenced
-			continue
-		}
-
-		elems := strings.Split(ref, " ")
-		if len(elems) < 2 {
-			continue
-		}
-
-		revision := elems[0]
-		name := strings.TrimSuffix(strings.TrimPrefix(elems[1], "refs/tags/"), "^{}")
-		tags = append(tags, struct {
-			Name     string
-			Revision string
-		}{
-			Name:     name,
-			Revision: revision,
-		})
+		return "", fmt.Errorf("get latest version: %v", err)
 	}
 
-	var ver *semver.Version
-	for _, tag := range tags {
-		v, err := semver.NewVersion(tag.Name)
-		if err != nil {
-			// FIXME: do debug logging
-			continue
-		}
-
-		mergeBase := exec.Command("git", "merge-base", "--is-ancestor", tag.Revision, headRev)
-		err = mergeBase.Run()
-		if err != nil {
-			// FIXME: do debug logging
-			continue
-		}
-
-		if ver == nil || v.GreaterThan(ver) {
-			ver = v
-		}
-	}
-
-	if ver != nil {
-		return ver.String(), nil
-	}
-
-	return "", fmt.Errorf("no semver compliant tags found")
+	return ver, nil
 }
 
-// CLIBuildTag generates a build tag based upon the current git revision and
+// GitBinaryBuildTag generates a build tag based upon the current git revision and
 // the state of the current work tree
-func CLIBuildTag() (string, error) {
+func GitBinaryBuildTag() (string, error) {
 	nameRev := exec.Command("git", "name-rev", "--name-only", "HEAD")
 	nameRevOut, err := nameRev.CombinedOutput()
 	if err != nil {
