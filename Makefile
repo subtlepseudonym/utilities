@@ -13,4 +13,4 @@ format fmt:
 test:
 	gotest --race -v ./...
 
-.PHONY: all test build
+.PHONY: build format fmt test
