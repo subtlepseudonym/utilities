@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	cliGit  = "cli"
+	gitBinary  = "binary"
 	goGit   = "go-git"
 	libGit2 = "libgit2"
 
@@ -38,7 +38,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "git-lib",
 			Usage: "method for retrieving git repo info",
-			Value: "cli",
+			Value: gitBinary,
 		},
 	}
 
@@ -53,14 +53,14 @@ func main() {
 func versionTag(ctx *cli.Context) error {
 	lib := ctx.String("git-lib")
 	switch lib {
-	case cliGit:
+	case gitBinary:
 		return cliAction(ctx)
 	case goGit:
 		return goGitAction(ctx)
 	case libGit2:
 		return libGit2Action(ctx)
 	default:
-		_, err := fmt.Fprintf(ctx.App.ErrWriter, "unrecognized git lib %q: use %q, %q, %q", lib, cliGit, goGit, libGit2)
+		_, err := fmt.Fprintf(ctx.App.ErrWriter, "unrecognized git lib %q: use %q, %q, %q", lib, gitBinary, goGit, libGit2)
 		return err
 	}
 }
