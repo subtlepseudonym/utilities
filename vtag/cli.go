@@ -26,24 +26,64 @@ func CLIVersion(useBranch bool) (string, error) {
 		}
 	}
 
-	cmd := exec.Command("git", "tag", "--list")
-	out, err := cmd.CombinedOutput()
+	revParse := exec.Command("git", "rev-parse", "HEAD")
+	revParseOut, err := revParse.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("git tag: %v", err)
+		return "", fmt.Errorf("cmd git rev-parse: %v", err)
 	}
+	headRev := strings.TrimSpace(string(revParseOut))
 
-	tags := strings.Split(string(out), "\n")
-	if len(tags) == 0 {
-		return "", fmt.Errorf("no tags")
+	showRef := exec.Command("git", "show-ref", "--tags", "--dereference")
+	showRefOut, err := showRef.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("cmd git show-ref: %v", err)
 	}
+	refs := strings.Split(string(showRefOut), "\n")
 
-	for i := len(tags) - 1; i >= 0; i-- {
-		tag := tags[i]
-		v, err := semver.NewVersion(tag)
-		if err == nil {
-			v.SetMetadata("") // zero out build data
-			return v.String(), nil
+	var tags []struct{ Name, Revision string }
+	for _, ref := range refs {
+		if !strings.HasSuffix(ref, "^{}") { // not dereferenced
+			continue
 		}
+
+		elems := strings.Split(ref, " ")
+		if len(elems) < 2 {
+			continue
+		}
+
+		revision := elems[0]
+		name := strings.TrimSuffix(strings.TrimPrefix(elems[1], "refs/tags/"), "^{}")
+		tags = append(tags, struct {
+			Name     string
+			Revision string
+		}{
+			Name:     name,
+			Revision: revision,
+		})
+	}
+
+	var ver *semver.Version
+	for _, tag := range tags {
+		v, err := semver.NewVersion(tag.Name)
+		if err != nil {
+			// FIXME: do debug logging
+			continue
+		}
+
+		mergeBase := exec.Command("git", "merge-base", "--is-ancestor", tag.Revision, headRev)
+		err = mergeBase.Run()
+		if err != nil {
+			// FIXME: do debug logging
+			continue
+		}
+
+		if ver == nil || v.GreaterThan(ver) {
+			ver = v
+		}
+	}
+
+	if ver != nil {
+		return ver.String(), nil
 	}
 
 	return "", fmt.Errorf("no semver compliant tags found")
