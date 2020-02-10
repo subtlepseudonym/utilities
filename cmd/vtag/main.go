@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	gitBinary  = "binary"
-	goGit   = "go-git"
-	libGit2 = "libgit2"
+	gitBinary = "binary"
+	goGit     = "go-git"
+	libGit2   = "libgit2"
 
 	branchRegex  = `.*-rc`
 	tagNameRegex = `tags.*\^0`
