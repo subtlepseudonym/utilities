@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/subtlepseudonym/utilities/base"
+	"github.com/subtlepseudonym/utilities/pkg/base"
 
 	"github.com/urfave/cli"
 )
