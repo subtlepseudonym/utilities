@@ -6,11 +6,11 @@ import (
 )
 
 func Convert(input string, from, to int) (out string, err error) {
-	var inputSet bool
+	var inputOk bool
 
 	defer func() {
 		if r := recover(); r != nil {
-			if !inputSet {
+			if !inputOk {
 				err = fmt.Errorf("from base: %v", r)
 			} else {
 				err = fmt.Errorf("to base: %v", r)
@@ -19,10 +19,7 @@ func Convert(input string, from, to int) (out string, err error) {
 	}()
 
 	i := new(big.Int)
+	i, inputOk = i.SetString(input, from)
 
-	i, _ = i.SetString(input, from)
-	inputSet = true
-
-	out = i.Text(to)
-	return out, nil
+	return i.Text(to), nil
 }
