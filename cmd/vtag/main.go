@@ -10,15 +10,15 @@ import (
 )
 
 const (
-	gitBinary  = "binary"
-	goGit   = "go-git"
-	libGit2 = "libgit2"
+	gitBinary = "binary"
+	goGit     = "go-git"
+	libGit2   = "libgit2"
 
 	branchRegex  = `.*-rc`
 	tagNameRegex = `tags.*\^0`
 )
 
-var Version = "1.0.0"
+var Version = "1.1.0"
 
 func main() {
 	app := cli.NewApp()
@@ -34,6 +34,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "ignore-rc",
 			Usage: "don't use \"*-rc\" branch names as version",
+		},
+		cli.BoolFlag{
+			Name:  "no-meta",
+			Usage: "don't append metadata to version",
 		},
 		cli.StringFlag{
 			Name:  "git-lib",
@@ -71,12 +75,15 @@ func cliAction(ctx *cli.Context) error {
 		return fmt.Errorf("version: %v", err)
 	}
 
-	buildTag, err := vtag.GitBinaryBuildTag()
-	if err != nil {
-		return fmt.Errorf("build tag: %v", err)
+	if !ctx.Bool("no-meta") {
+		buildTag, err := vtag.GitBinaryBuildTag()
+		if err != nil {
+			return fmt.Errorf("build tag: %v", err)
+		}
+		version += buildTag
 	}
 
-	_, err = fmt.Fprintf(ctx.App.Writer, "%s%s", version, buildTag)
+	_, err = fmt.Fprint(ctx.App.Writer, version)
 	return err
 }
 

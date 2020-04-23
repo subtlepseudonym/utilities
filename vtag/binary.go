@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/subtlepseudonym/version"
 	"github.com/Masterminds/semver"
+	"github.com/subtlepseudonym/version"
 )
 
 const tagRevision = `tags.*\^0`
