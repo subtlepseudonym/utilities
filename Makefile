@@ -8,7 +8,7 @@ build:
 	done
 
 format fmt:
-	go fmt -x ./...
+	gofmt -l -w .
 
 test:
 	gotest --race -v ./...
