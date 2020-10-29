@@ -31,15 +31,15 @@ func main() {
 	app.ErrWriter = os.Stderr
 
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "ignore-rc",
 			Usage: "don't use \"*-rc\" branch names as version",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "no-meta",
 			Usage: "don't append metadata to version",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "git-lib",
 			Usage: "method for retrieving git repo info",
 			Value: gitBinary,
