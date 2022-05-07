@@ -11,8 +11,10 @@ import (
 var Version = "1.0.0"
 
 var (
-	total float64
-	fee   float64
+	// flags
+	total     float64
+	fee       float64
+	precision int
 )
 
 func main() {
@@ -26,6 +28,7 @@ func main() {
 
 	cmd.Flags().Float64VarP(&total, "total", "t", 0.0, "Total of charges plus fee")
 	cmd.Flags().Float64VarP(&fee, "fee", "f", 0.0, "Fee to use in calculating total charge. If both this flag and --total are provided, this flag is used")
+	cmd.Flags().IntVarP(&precision, "precision", "p", 2, "Numeric precision of output")
 
 	cmd.ParseFlags(os.Args[1:])
 
@@ -66,7 +69,8 @@ func run(cmd *cobra.Command, args []string) error {
 
 	for _, charge := range charges {
 		proportion := fee * (charge / sum)
-		fmt.Fprintf(os.Stdout, "%f %f\n", charge, proportion)
+		outputFormat := fmt.Sprintf("%%.%df %%.%df\n", precision, precision)
+		fmt.Fprintf(os.Stdout, outputFormat, charge, proportion)
 	}
 
 	return nil
