@@ -68,8 +68,8 @@ func run(cmd *cobra.Command, args []string) error {
 
 	for _, charge := range charges {
 		proportion := fee * (charge / sum)
-		outputFormat := fmt.Sprintf("%%.%df %%.%df\n", precision, precision)
-		fmt.Fprintf(os.Stdout, outputFormat, charge, proportion)
+		outputFormat := fmt.Sprintf("%%.%df + %%.%df = %%.%df\n", precision, precision, precision)
+		fmt.Fprintf(os.Stdout, outputFormat, charge, proportion, charge + proportion)
 	}
 
 	return nil
