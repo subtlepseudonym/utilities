@@ -28,11 +28,7 @@ func main() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	err := cmd.ParseFlags(args)
-	if err != nil {
-		return fmt.Errorf("%w", err)
-	}
-
+	var err error
 	count := 1
 	if len(args) > 0 {
 		count, err = strconv.Atoi(args[0])
