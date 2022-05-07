@@ -12,7 +12,7 @@ var Version = "1.0.0"
 
 var (
 	total float64
-	fee float64
+	fee   float64
 )
 
 func main() {
