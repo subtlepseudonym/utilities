@@ -20,15 +20,14 @@ var (
 func main() {
 	cmd := cobra.Command{
 		Use:     "fee {--total|--fee} charges...",
-		Short:   "Calculate proportion of fee for each charge in total",
-		Long:    "Calculate the difference between the sum of all charges and the sum of all charges plus a fee and display the proportion of the fee for which each charge is responsible. For meaningful results, either the --total or --fee flag must be used.",
+		Short:   "Calculate proportion of fee for each charge in set",
 		Version: Version,
 		RunE:    run,
 	}
 
-	cmd.Flags().Float64VarP(&total, "total", "t", 0.0, "Total of charges plus fee")
-	cmd.Flags().Float64VarP(&fee, "fee", "f", 0.0, "Fee to use in calculating total charge. If both this flag and --total are provided, this flag is used")
-	cmd.Flags().IntVarP(&precision, "precision", "p", 2, "Numeric precision of output")
+	cmd.Flags().Float64VarP(&total, "total", "t", 0.0, "total of charges plus fee")
+	cmd.Flags().Float64VarP(&fee, "fee", "f", 0.0, "fee applied to sum of charges. If both this flag and --total are provided, this flag is used")
+	cmd.Flags().IntVarP(&precision, "precision", "p", 2, "numeric precision of output")
 
 	cmd.ParseFlags(os.Args[1:])
 
