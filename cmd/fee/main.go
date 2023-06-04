@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -66,10 +67,16 @@ func run(cmd *cobra.Command, args []string) error {
 		fmt.Fprint(os.Stderr, "warn: fee is negative\n")
 	}
 
+	var feeCheck float64
 	for _, charge := range charges {
 		proportion := fee * (charge / sum)
+		feeCheck += math.Round(proportion*math.Pow(10, float64(precision))) / math.Pow(10, float64(precision))
 		outputFormat := fmt.Sprintf("%%.%df + %%.%df = %%.%df\n", precision, precision, precision)
-		fmt.Fprintf(os.Stdout, outputFormat, charge, proportion, charge + proportion)
+		fmt.Fprintf(os.Stdout, outputFormat, charge, proportion, charge+proportion)
+	}
+	if feeCheck != fee {
+		format := fmt.Sprintf("warn: remainder: %%.%df\n", precision)
+		fmt.Fprintf(os.Stderr, format, feeCheck-fee)
 	}
 
 	return nil
