@@ -63,7 +63,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if fee < 0 {
-		fmt.Fprint(os.Stderr, "warn: fee is negative")
+		fmt.Fprint(os.Stderr, "warn: fee is negative\n")
 	}
 
 	for _, charge := range charges {
