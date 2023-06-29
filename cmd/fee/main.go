@@ -74,7 +74,8 @@ func run(cmd *cobra.Command, args []string) error {
 		outputFormat := fmt.Sprintf("%%.%df + %%.%df = %%.%df\n", precision, precision, precision)
 		fmt.Fprintf(os.Stdout, outputFormat, charge, proportion, charge+proportion)
 	}
-	if feeCheck != fee {
+	roundedFee := math.Round(fee*math.Pow(10, float64(precision))) / math.Pow(10, float64(precision))
+	if feeCheck != roundedFee {
 		format := fmt.Sprintf("warn: remainder: %%.%df\n", precision)
 		fmt.Fprintf(os.Stderr, format, feeCheck-fee)
 	}
