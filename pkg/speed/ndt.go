@@ -1,6 +1,8 @@
 package speed
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -30,7 +32,8 @@ type NDTLocation struct {
 // Locate makes an NDT locate request, returning a list of
 // the nearest NDTMachines that can be tested against
 func Locate(client *http.Client) ([]NDTMachine, error) {
-	req, err := http.NewRequest(http.MethodGet, ndtLocateURL)
+	var buf bytes.Reader
+	req, err := http.NewRequest(http.MethodGet, ndtLocateURL, &buf)
 	if err != nil {
 		return nil, fmt.Errorf("build ndt locate request: %v", err)
 	}
