@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "1.0.0"
+var Version = "1.1.0"
 
 var (
 	// flags
@@ -43,6 +43,10 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no charges provided")
 	}
 
+	if fee == 0.0 && total == 0.0 {
+		return fmt.Errorf("either --fee or --total must be provided")
+	}
+
 	var sum float64
 	var charges []float64
 	for _, arg := range args {
@@ -55,12 +59,14 @@ func run(cmd *cobra.Command, args []string) error {
 		charges = append(charges, charge)
 	}
 
-	if fee == 0.0 {
-		if total == 0.0 {
-			return fmt.Errorf("either --total or --fee must be provided")
+	if total != 0.0 {
+		inferred := total - sum
+		if fee != 0.0 {
+			sum += inferred - fee
+			charges = append(charges, inferred - fee)
+		} else {
+			fee = inferred
 		}
-
-		fee = total - sum
 	}
 
 	if fee < 0 {
