@@ -63,7 +63,7 @@ func run(cmd *cobra.Command, args []string) error {
 		inferred := total - sum
 		if fee != 0.0 {
 			sum += inferred - fee
-			charges = append(charges, inferred - fee)
+			charges = append(charges, inferred-fee)
 		} else {
 			fee = inferred
 		}
