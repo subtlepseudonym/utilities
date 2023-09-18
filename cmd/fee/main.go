@@ -27,7 +27,7 @@ func main() {
 	}
 
 	cmd.Flags().Float64VarP(&total, "total", "t", 0.0, "total of charges plus fee")
-	cmd.Flags().Float64VarP(&fee, "fee", "f", 0.0, "fee applied to sum of charges. If both this flag and --total are provided, this flag is used")
+	cmd.Flags().Float64VarP(&fee, "fee", "f", 0.0, "fee applied to sum of charges. If both this flag and --total are provided, a missing charge is inferred if the sum of charges does not equal (total + fee + charges)")
 	cmd.Flags().IntVarP(&precision, "precision", "p", 2, "numeric precision of output")
 
 	cmd.ParseFlags(os.Args[1:])
