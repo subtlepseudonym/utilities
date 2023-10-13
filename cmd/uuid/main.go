@@ -24,7 +24,16 @@ func main() {
 	app.Version = Version
 	app.Usage = "generates v4 UUIDs"
 	app.UsageText = fmt.Sprintf("%s [flags] [count]", app.Name)
-	app.Description = `Generates UUIDs. If you provide an integer argument, it will treat it like usage of the --count flag. Explicit usage of the --count flag will override this behavior.`
+	app.Description = `Generates UUIDs.
+
+	Supported UUID types:
+		- [1|v1]:            Version 1 (date-time and MAC address)
+		- [3|v3|md5]:        Version 3 (namespace name-based MD5)
+		- [4|v4|random]:     Version 4 (random)
+		- [5|v5|sha1|sha-1]: Version 5 (namespace name-based SHA-1)
+		- [6|v6]:            Version 6 (k-sortable and random, field-compatible with v1)
+		- [7|v7]:            Version 7 (k-sortable and random)
+`
 
 	app.Writer = os.Stdout
 	app.ErrWriter = os.Stderr
