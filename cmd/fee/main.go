@@ -4,18 +4,17 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 )
 
-var Version = "1.2.0"
+var Version = "1.3.0"
 
 var (
 	// flags
-	totalFloat float64
-	feeFloat   float64
-	precision  int
+	totalFlag string
+	feeFlag   string
+	precision int
 )
 
 func main() {
@@ -26,8 +25,8 @@ func main() {
 		RunE:    run,
 	}
 
-	cmd.Flags().Float64VarP(&totalFloat, "total", "t", 0.0, "total of charges plus fee")
-	cmd.Flags().Float64VarP(&feeFloat, "fee", "f", 0.0, "fee applied to sum of charges. If both this flag and --total are provided, a missing charge is inferred if the sum of charges does not equal (total + fee + charges)")
+	cmd.Flags().StringVarP(&totalFlag, "total", "t", "", "total of charges plus fee")
+	cmd.Flags().StringVarP(&feeFlag, "fee", "f", "", "fee applied to sum of charges. If both this flag and --total are provided, a missing charge is inferred if the sum of charges does not equal (total + fee)")
 	cmd.Flags().IntVarP(&precision, "precision", "p", 2, "numeric precision of output")
 
 	cmd.ParseFlags(os.Args[1:])
@@ -38,9 +37,9 @@ func main() {
 	}
 }
 
-// pEq returns a boolean indicating whether two floats are equal at a given decimal precision
-func pEq(x, y *big.Float, precision int) bool {
-	return x.Text('f', precision) == y.Text('f', precision)
+// pEq returns a boolean indicating whether two rationals are equal at a given decimal precision
+func pEq(x, y *big.Rat, precision int) bool {
+	return x.FloatString(precision) == y.FloatString(precision)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -48,31 +47,37 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no charges provided")
 	}
 
-	if feeFloat == 0.0 && totalFloat == 0.0 {
+	if feeFlag == "" && totalFlag == "" {
 		return fmt.Errorf("either --fee or --total must be provided")
 	}
 
-	total := big.NewFloat(totalFloat)
-	fee := big.NewFloat(feeFloat)
+	total, ok := new(big.Rat).SetString(totalFlag)
+	if !ok {
+		return fmt.Errorf("parse rat: %q", totalFlag)
+	}
 
-	sum := new(big.Float)
-	var charges []*big.Float
+	fee, ok := new(big.Rat).SetString(feeFlag)
+	if !ok {
+		return fmt.Errorf("parse rat: %q", totalFlag)
+	}
+
+	sum := new(big.Rat)
+	var charges []*big.Rat
 	for _, arg := range args {
-		c, err := strconv.ParseFloat(arg, 64)
-		if err != nil {
-			return fmt.Errorf("parse float: %w", err)
+		charge, ok := new(big.Rat).SetString(arg)
+		if !ok {
+			return fmt.Errorf("parse rat: %q", arg)
 		}
-
-		charge := big.NewFloat(c)
 		sum.Add(sum, charge)
 		charges = append(charges, charge)
 	}
 
-	if total.Sign() > 0 {
-		inferred := total.Sub(total, sum)
-		if !pEq(inferred, new(big.Float), precision) {
-			if fee.Sign() > 0 {
-				inferred.Sub(inferred, fee)
+	var warnings []string
+	if total.Cmp(new(big.Rat)) != 0 {
+		inferred := total.Sub(total, new(big.Rat).Add(fee, sum))
+		cmp := inferred.Cmp(new(big.Rat))
+		if cmp != 0 {
+			if fee.Cmp(new(big.Rat)) != 0 {
 				sum.Add(sum, inferred)
 				charges = append(charges, inferred)
 			} else {
@@ -80,26 +85,48 @@ func run(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		if inferred.Sign() < 0 {
-			fmt.Fprint(os.Stderr, "warn: inferred charge is negative\n")
+		if cmp < 0 {
+			warnings = append(warnings, "inferred charge is negative")
 		}
 	}
+	total = new(big.Rat).Add(sum, fee)
 
 	if fee.Sign() < 0 {
-		fmt.Fprint(os.Stderr, "warn: fee is negative\n")
+		warnings = append(warnings, "fee is negative")
 	}
 
-	proportionSum := new(big.Float)
+	lineSum := new(big.Rat)
 	for _, charge := range charges {
-		proportion := new(big.Float).Mul(fee, new(big.Float).Quo(charge, sum))
-		proportionSum.Add(proportionSum, proportion)
-		outputFormat := fmt.Sprintf("%%.%df + %%.%df = %%.%df\n", precision, precision, precision)
-		fmt.Fprintf(os.Stdout, outputFormat, charge, proportion, new(big.Float).Add(charge, proportion))
+		proportion := new(big.Rat).Quo(new(big.Rat).Mul(fee, charge), sum)
+		lineTotal := new(big.Rat).Add(charge, proportion).FloatString(precision)
+		fmt.Fprintf(
+			os.Stdout,
+			"%s + %s = %s\n",
+			charge.FloatString(precision),
+			proportion.FloatString(precision),
+			lineTotal,
+		)
+
+		rounded, _ := new(big.Rat).SetString(lineTotal)
+		lineSum.Add(lineSum, rounded)
 	}
 
-	if !pEq(fee, proportionSum, precision) {
-		format := fmt.Sprintf("warn: remainder: %%.%df\n", precision)
-		fmt.Fprintf(os.Stderr, format, fee.Sub(fee, proportionSum))
+	if total.Cmp(lineSum) != 0 {
+		remainder := new(big.Rat).Sub(total, lineSum)
+		n, exact := remainder.FloatPrec()
+		var format string
+		if exact {
+			format = fmt.Sprintf("remainder %%.%df", n)
+		} else {
+			format = fmt.Sprintf("remainder %%.%df", n+2)
+		}
+
+		remainderFloat, _ := remainder.Float64()
+		warnings = append(warnings, fmt.Sprintf(format, remainderFloat))
+	}
+
+	for _, warn := range warnings {
+		fmt.Fprintf(os.Stderr, "warn: %s\n", warn)
 	}
 
 	return nil
