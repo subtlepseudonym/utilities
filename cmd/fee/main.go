@@ -37,11 +37,6 @@ func main() {
 	}
 }
 
-// pEq returns a boolean indicating whether two rationals are equal at a given decimal precision
-func pEq(x, y *big.Rat, precision int) bool {
-	return x.FloatString(precision) == y.FloatString(precision)
-}
-
 func run(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("no charges provided")
